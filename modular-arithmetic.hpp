@@ -1,7 +1,11 @@
 #pragma once
 
+#include <iostream>
+
 //#define P 982451653
+#ifndef P
 #define P 11
+#endif
 
 long mAdd(long a, long b)
 {
