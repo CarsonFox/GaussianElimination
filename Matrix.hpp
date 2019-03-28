@@ -5,32 +5,28 @@
 #include <memory>
 #include <random>
 
-#include "modular-arithmetic.hpp"
+#include "ModInt.hpp"
 
-/*
- * Simple matrix class. Uses modular arithmetic.
- */
-
-template <size_t N, size_t M>
+template<size_t N, size_t M, long P>
 class Matrix {
 private:
-    std::unique_ptr<std::unique_ptr<long[]>[]> data;
+    std::unique_ptr<std::unique_ptr<ModInt<P>[]>[]> data;
 
     Matrix() = default;
 
 public:
     explicit Matrix(int seed)
     {
-        data = std::make_unique<std::unique_ptr<long[]>[]>(N);
+        data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
 
         std::minstd_rand rand;
         rand.seed(seed);
         std::uniform_int_distribution<long> dist(0, P - 1);
 
         for (size_t i = 0; i < N; i++) {
-            data[i] = std::make_unique<long[]>(M);
+            data[i] = std::make_unique<ModInt<P>[]>(M);
             for (size_t j = 0; j < M; j++) {
-                data[i][j] = dist(rand);
+                data[i][j] = ModInt<P>(dist(rand));
             }
         }
     }
@@ -57,24 +53,24 @@ public:
             // For every row j > i
             for (size_t j = i + 1; j < N; j++) {
                 // Find the factor by which row i must be multiplied, such that A[i, i] = A[i, j]
-                auto factor = mDiv(data[j][i], data[i][i]);
+                auto factor = data[j][i] / data[i][i];
                 // Then subtract the row i * factor from row j
                 for (size_t k = i; k < M; k++) {
-                    data[j][k] = mSub(data[j][k], mMul(factor, data[i][k]));
+                    data[j][k] -= factor * data[i][k];
                 }
             }
         }
 
         //The last row is solved
-        data[N - 1][M - 1] = mDiv(data[N - 1][M - 1], data[N - 1][M - 2]);
+        data[N - 1][M - 1] = data[N - 1][M - 1] / data[N - 1][M - 2];
 
         //Starting from the bottom, substitute values back up the rows
         for (long i = N - 2; i >= 0; i--) {
             //A[i, i] is being solved. Column j from [i+1, M - 1) is the range of known values
             for (size_t j = (size_t)i + 1; j < M - 1; j++) {
-                data[i][M - 1] = mSub(data[i][M - 1], mMul(data[i][j], variable(j)));
+                data[i][M - 1] -= data[i][j] * variable(j);
             }
-            data[i][M - 1] = mDiv(data[i][M - 1], data[i][i]);
+            data[i][M - 1] /= data[i][i];
         }
 
         return true;
@@ -89,9 +85,9 @@ public:
         bool solved = true;
 
         for (size_t i = 0; i < N; i++) {
-            long sum = 0;
+            ModInt<P> sum(0);
             for (size_t j = 0; j < M - 1; j++) {
-                sum = mAdd(sum, mMul(original.data[i][j], variable(j)));
+                sum += original.data[i][j] * variable(j);
             }
             if (sum != original.variable(i)) {
                 std::cout << "Row " << i << " adds to " << sum << ", expected " << original.variable(i) << std::endl;
@@ -102,7 +98,7 @@ public:
         return solved;
     }
 
-    inline long variable(size_t i) const
+    inline ModInt<P> variable(size_t i) const
     {
         return data[i][M - 1];
     }
@@ -110,10 +106,10 @@ public:
     Matrix copy() const
     {
         Matrix ret;
-        ret.data = std::make_unique<std::unique_ptr<long[]>[]>(N);
+        ret.data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
 
         for (size_t i = 0; i < N; i++) {
-            ret.data[i] = std::make_unique<long[]>(M);
+            ret.data[i] = std::make_unique<ModInt<P>[]>(M);
             for (size_t j = 0; j < M; j++) {
                 ret.data[i][j] = this->data[i][j];
             }
@@ -123,7 +119,7 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os,
-        const Matrix<N, M>& matrix)
+                                    const Matrix<N, M, P> &matrix)
     {
         for (size_t i = 0; i < N; i++) {
             for (size_t j = 0; j < M; j++) {
