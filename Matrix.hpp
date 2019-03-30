@@ -7,16 +7,22 @@
 
 #include "ModInt.hpp"
 
-template<size_t N, size_t M, long P>
+template<size_t P>
 class Matrix {
 private:
+    const size_t N, M;
     std::unique_ptr<std::unique_ptr<ModInt<P>[]>[]> data;
 
-    Matrix() = default;
-
 public:
-    explicit Matrix(int seed)
+    explicit Matrix(size_t size) : N(size), M(size + 1) {}
+
+    Matrix(int seed, size_t size) : N(size), M(size + 1)
     {
+        if (size == 0) {
+            std::cerr << "Cannot create and array with zero size" << std::endl;
+            std::exit(1);
+        }
+
         data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
 
         std::minstd_rand rand;
@@ -105,7 +111,7 @@ public:
 
     Matrix copy() const
     {
-        Matrix ret;
+        Matrix ret(N);
         ret.data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
 
         for (size_t i = 0; i < N; i++) {
@@ -119,17 +125,14 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os,
-                                    const Matrix<N, M, P> &matrix)
+                                    const Matrix<P> &matrix)
     {
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < M; j++) {
+        for (size_t i = 0; i < matrix.N; i++) {
+            for (size_t j = 0; j < matrix.M; j++) {
                 os << matrix.data[i][j] << "   ";
             }
             os << std::endl;
         }
         return os;
     }
-
-    static_assert(N > 0 && M > 0,
-        "Cannot make a matrix/vector with zero rows or columns");
 };

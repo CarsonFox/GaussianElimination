@@ -7,11 +7,9 @@
 #define SIZE 300
 #endif
 
-void system3();
-
 int main() {
-    for (int i = 0; i < INT_MAX; i++) {
-        Matrix<SIZE, SIZE + 1, 11> mat(i);
+    for (int i = 0; i < 1000; i++) {
+        Matrix<11> mat(i, 40);
         const auto original = mat.copy();
 
         std::cout << "Matrix " << i << ": ";
