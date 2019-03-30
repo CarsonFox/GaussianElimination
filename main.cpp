@@ -1,29 +1,35 @@
-#include <climits>
+#include <chrono>
+#include <string>
 #include <iostream>
 
 #include "Matrix.hpp"
 
-#ifndef SIZE
-#define SIZE 300
-#endif
+int main(int argc, char **argv) {
+    //4300 takes about a minute on my laptop
+    size_t size = 4300;
 
-int main() {
-    for (int i = 0; i < 1000; i++) {
-        Matrix<11> mat(i, 40);
-        const auto original = mat.copy();
+    if (argc == 2) {
+        try {
+            size = (size_t) std::stoi(std::string(argv[1]));
+        } catch (std::exception &e) {
+            std::cerr << "Error parsing argument " << argv[1] << ": " << e.what() << std::endl;
+            return 1;
+        }
+    }
 
-        std::cout << "Matrix " << i << ": ";
+    for (;;) {
+        Matrix<982451653> mat(size);
+        auto original(mat);
 
-        if (mat.solve()) {
-            if (mat.checkSolution(original)) {
-                std::cout << "Solved" << std::endl;
-            } else {
-                std::cout << "Incorrect solution for seed " << i << '!' << std::endl
-                          << std::endl;
-                std::cout << mat << std::endl
-                          << original << std::endl;
-                break;
-            }
+        auto start = std::chrono::system_clock::now();
+        bool solved = mat.solve();
+        auto end = std::chrono::system_clock::now();
+
+        if (solved) {
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << duration.count() << std::endl;
+            std::cout << std::boolalpha << mat.checkSolution(original) << std::endl;
+            break;
         }
     }
 }

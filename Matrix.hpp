@@ -14,10 +14,7 @@ private:
     std::unique_ptr<std::unique_ptr<ModInt<P>[]>[]> data;
 
 public:
-    explicit Matrix(size_t size) : N(size), M(size + 1) {}
-
-    Matrix(int seed, size_t size) : N(size), M(size + 1)
-    {
+    explicit Matrix(size_t size) : N(size), M(size + 1) {
         if (size == 0) {
             std::cerr << "Cannot create and array with zero size" << std::endl;
             std::exit(1);
@@ -25,20 +22,33 @@ public:
 
         data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
 
-        std::minstd_rand rand;
-        rand.seed(seed);
+        std::random_device dev;
+        std::default_random_engine rand(dev());
         std::uniform_int_distribution<long> dist(0, P - 1);
 
         for (size_t i = 0; i < N; i++) {
             data[i] = std::make_unique<ModInt<P>[]>(M);
             for (size_t j = 0; j < M; j++) {
-                data[i][j] = ModInt<P>(dist(rand));
+                //Disallow 0s on the diagonals to avoid an inconsistent system
+                do {
+                    data[i][j] = ModInt<P>(dist(rand));
+                } while (j == i && data[i][i] == 0);
             }
         }
     }
 
-    bool solve()
-    {
+    Matrix(const Matrix &other) : N(other.N), M(other.M) {
+        data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
+
+        for (size_t i = 0; i < N; i++) {
+            data[i] = std::make_unique<ModInt<P>[]>(M);
+            for (size_t j = 0; j < M; j++) {
+                data[i][j] = other.data[i][j];
+            }
+        }
+    }
+
+    bool solve() {
         // For every element A[i, i] (the diagonal)
         for (size_t i = 0; i < N; i++) {
             // If A[i][i] = 0, rows need to be swapped to get information about variable i
@@ -50,10 +60,10 @@ public:
                         swapped = true;
                     }
                 }
-                if (!swapped) {
-                    std::cout << "Impossible matrix given!" << std::endl;
+
+                //System is inconsistent
+                if (!swapped)
                     return false;
-                }
             }
 
             // For every row j > i
@@ -73,7 +83,7 @@ public:
         //Starting from the bottom, substitute values back up the rows
         for (long i = N - 2; i >= 0; i--) {
             //A[i, i] is being solved. Column j from [i+1, M - 1) is the range of known values
-            for (size_t j = (size_t)i + 1; j < M - 1; j++) {
+            for (size_t j = (size_t) i + 1; j < M - 1; j++) {
                 data[i][M - 1] -= data[i][j] * variable(j);
             }
             data[i][M - 1] /= data[i][i];
@@ -82,8 +92,7 @@ public:
         return true;
     }
 
-    bool checkSolution(const Matrix& original)
-    {
+    bool checkSolution(const Matrix &original) {
         /*
          * Compute each row by multiplying the coefficients from the original matrix
          * by the value of each variable, and check the solution
@@ -104,29 +113,12 @@ public:
         return solved;
     }
 
-    inline ModInt<P> variable(size_t i) const
-    {
+    inline ModInt<P> variable(size_t i) const {
         return data[i][M - 1];
     }
 
-    Matrix copy() const
-    {
-        Matrix ret(N);
-        ret.data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
-
-        for (size_t i = 0; i < N; i++) {
-            ret.data[i] = std::make_unique<ModInt<P>[]>(M);
-            for (size_t j = 0; j < M; j++) {
-                ret.data[i][j] = this->data[i][j];
-            }
-        }
-
-        return ret;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os,
-                                    const Matrix<P> &matrix)
-    {
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const Matrix<P> &matrix) {
         for (size_t i = 0; i < matrix.N; i++) {
             for (size_t j = 0; j < matrix.M; j++) {
                 os << matrix.data[i][j] << "   ";
