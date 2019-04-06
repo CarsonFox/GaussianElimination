@@ -54,7 +54,8 @@ public:
             // If A[i][i] = 0, rows need to be swapped to get information about variable i
             if (data[i][i] == 0) {
                 bool swapped = false;
-                for (size_t s = i + 1; s < N; s++) {
+
+                for (size_t s = i + 1; s < N && !swapped; s++) {
                     if (data[s][i] != 0) {
                         std::swap(data[i], data[s]);
                         swapped = true;
@@ -66,7 +67,7 @@ public:
                     return false;
             }
 
-            // For every row j > i
+#pragma omp parallel for schedule(runtime)
             for (size_t j = i + 1; j < N; j++) {
                 // Find the factor by which row i must be multiplied, such that A[i, i] = A[i, j]
                 auto factor = data[j][i] / data[i][i];
@@ -99,13 +100,13 @@ public:
          */
         bool solved = true;
 
+#pragma omp parallel for schedule(static)
         for (size_t i = 0; i < N; i++) {
             ModInt<P> sum(0);
             for (size_t j = 0; j < M - 1; j++) {
                 sum += original.data[i][j] * variable(j);
             }
             if (sum != original.variable(i)) {
-                std::cout << "Row " << i << " adds to " << sum << ", expected " << original.variable(i) << std::endl;
                 solved = false;
             }
         }

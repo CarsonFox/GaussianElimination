@@ -1,11 +1,11 @@
 #include <chrono>
-#include <string>
 #include <iostream>
+#include <omp.h>
+#include <string>
 
 #include "Matrix.hpp"
 
 int main(int argc, char **argv) {
-    //4300 takes about a minute on my laptop
     size_t size = 4300;
 
     if (argc == 2) {
@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
     for (;;) {
         Matrix<982451653> mat(size);
-        auto original(mat);
+        const auto original(mat);
 
         auto start = std::chrono::system_clock::now();
         bool solved = mat.solve();
@@ -28,8 +28,7 @@ int main(int argc, char **argv) {
         if (solved) {
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << duration.count() << std::endl;
-            std::cout << std::boolalpha << mat.checkSolution(original) << std::endl;
-            break;
+            return mat.checkSolution(original) ? 0 : 1;
         }
     }
 }
