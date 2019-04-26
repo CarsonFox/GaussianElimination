@@ -16,7 +16,7 @@ private:
 public:
     explicit Matrix(size_t size) : N(size), M(size + 1) {
         if (size == 0) {
-            std::cerr << "Cannot create and array with zero size" << std::endl;
+            std::cerr << "Matrix must have nonzero size" << std::endl;
             std::exit(1);
         }
 
@@ -27,7 +27,7 @@ public:
         std::uniform_int_distribution<long> dist(0, P - 1);
 
         for (size_t i = 0; i < N; i++) {
-            data[i] = std::make_unique<ModInt<P>[]>(M);
+            data[i] = std::make_unique<ModInt<P>[]>(M + 8);
             for (size_t j = 0; j < M; j++) {
                 //Disallow 0s on the diagonals to avoid an inconsistent system
                 do {
