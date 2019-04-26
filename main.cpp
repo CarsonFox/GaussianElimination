@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    omp_set_num_threads(4);
+
     for (;;) {
         Matrix<982451653> mat(size);
         const auto original(mat);

@@ -67,13 +67,14 @@ public:
                     return false;
             }
 
-#pragma omp parallel for schedule(runtime)
-            for (size_t j = i + 1; j < N; j++) {
-                // Find the factor by which row i must be multiplied, such that A[i, i] = A[i, j]
-                auto factor = data[j][i] / data[i][i];
-                // Then subtract the row i * factor from row j
-                for (size_t k = i; k < M; k++) {
-                    data[j][k] -= factor * data[i][k];
+            const auto RANGE = N - i;
+            const auto MID = RANGE / 2 + 1;
+
+#pragma omp parallel for schedule(static)
+            for (size_t j = 1; j < MID; j++) {
+                subtractRow(i, i + j);
+                if (N - j > i + j) {
+                    subtractRow(i, N - j);
                 }
             }
         }
@@ -91,6 +92,15 @@ public:
         }
 
         return true;
+    }
+
+    inline void subtractRow(size_t i, size_t j) {
+        // Find the factor by which row i must be multiplied, such that A[i, i] = A[i, j]
+        auto factor = data[j][i] / data[i][i];
+        // Then subtract the row i * factor from row j
+        for (size_t k = i; k < M; k++) {
+            data[j][k] -= factor * data[i][k];
+        }
     }
 
     bool checkSolution(const Matrix &original) {
