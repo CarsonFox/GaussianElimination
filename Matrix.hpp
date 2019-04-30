@@ -7,41 +7,39 @@
 
 #include "ModInt.hpp"
 
-template<size_t P>
 class Matrix {
 private:
     const size_t N, M;
-    std::unique_ptr<std::unique_ptr<ModInt<P>[]>[]> data;
+    std::unique_ptr<std::unique_ptr<ModInt[]>[]> data;
 
 public:
-    explicit Matrix(size_t size) : N(size), M(size + 1) {
+    explicit Matrix(size_t size, int seed) : N(size), M(size + 1) {
         if (size == 0) {
             std::cerr << "Matrix must have nonzero size" << std::endl;
             std::exit(1);
         }
 
-        data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
+        data = std::make_unique<std::unique_ptr<ModInt[]>[]>(N);
 
-        std::random_device dev;
-        std::default_random_engine rand(dev());
+        std::default_random_engine rand(seed);
         std::uniform_int_distribution<long> dist(0, P - 1);
 
         for (size_t i = 0; i < N; i++) {
-            data[i] = std::make_unique<ModInt<P>[]>(M + 8);
+            data[i] = std::make_unique<ModInt[]>(M + 8);
             for (size_t j = 0; j < M; j++) {
                 //Disallow 0s on the diagonals to avoid an inconsistent system
                 do {
-                    data[i][j] = ModInt<P>(dist(rand));
+                    data[i][j] = ModInt(dist(rand));
                 } while (j == i && data[i][i] == 0);
             }
         }
     }
 
     Matrix(const Matrix &other) : N(other.N), M(other.M) {
-        data = std::make_unique<std::unique_ptr<ModInt<P>[]>[]>(N);
+        data = std::make_unique<std::unique_ptr<ModInt[]>[]>(N);
 
         for (size_t i = 0; i < N; i++) {
-            data[i] = std::make_unique<ModInt<P>[]>(M);
+            data[i] = std::make_unique<ModInt[]>(M);
             for (size_t j = 0; j < M; j++) {
                 data[i][j] = other.data[i][j];
             }
@@ -112,7 +110,7 @@ public:
 
 #pragma omp parallel for schedule(static)
         for (size_t i = 0; i < N; i++) {
-            ModInt<P> sum(0);
+            ModInt sum(0);
             for (size_t j = 0; j < M - 1; j++) {
                 sum += original.data[i][j] * variable(j);
             }
@@ -124,12 +122,12 @@ public:
         return solved;
     }
 
-    inline ModInt<P> variable(size_t i) const {
+    inline ModInt variable(size_t i) const {
         return data[i][M - 1];
     }
 
     friend std::ostream &operator<<(std::ostream &os,
-                                    const Matrix<P> &matrix) {
+                                    const Matrix &matrix) {
         for (size_t i = 0; i < matrix.N; i++) {
             for (size_t j = 0; j < matrix.M; j++) {
                 os << matrix.data[i][j] << "   ";

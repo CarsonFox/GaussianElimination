@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-template<long P>
+#define P 982451653
+
 struct ModInt {
 public:
     ModInt() = default;

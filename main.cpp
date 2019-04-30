@@ -6,22 +6,29 @@
 #include "Matrix.hpp"
 
 int main(int argc, char **argv) {
-    size_t size = 4300;
+    size_t size;
+    int threads, seed;
 
-    if (argc == 2) {
+    if (argc == 4) {
         try {
             size = (size_t) std::stoi(std::string(argv[1]));
+            threads = std::stoi(std::string(argv[2]));
+            seed = std::stoi(std::string(argv[3]));
         } catch (std::exception &e) {
-            std::cerr << "Error parsing argument " << argv[1] << ": " << e.what() << std::endl;
+            std::cerr << "Error parsing argument " << e.what() << std::endl;
             return 1;
         }
+    } else {
+        std::cerr << "Not enough arguments: supply size, number of threads, and seed for rng" << std::endl;
+        return 1;
     }
 
-    omp_set_num_threads(4);
+    omp_set_num_threads(threads);
 
+    //Keep increasing the seed until a solvable matrix is generated
     for (;;) {
-        Matrix<982451653> mat(size);
-        const auto original(mat);
+        Matrix mat(size, seed);
+        const Matrix original(mat);
 
         auto start = std::chrono::system_clock::now();
         bool solved = mat.solve();
@@ -31,6 +38,8 @@ int main(int argc, char **argv) {
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << duration.count() << std::endl;
             return mat.checkSolution(original) ? 0 : 1;
+        } else {
+            seed++;
         }
     }
 }
